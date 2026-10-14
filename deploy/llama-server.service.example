@@ -1,0 +1,17 @@
+[Unit]
+Description=WISP llama.cpp inference server
+After=local-fs.target
+RequiresMountsFor=/mnt/emmc
+
+[Service]
+Type=simple
+User=wisp
+Group=wisp
+ExecStart=/opt/llama.cpp/build/bin/llama-server -m /mnt/emmc/models/qwen2.5-1.5b-instruct-q4_k_m.gguf -t 4 -c 1024 --host 127.0.0.1 --port 8080
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+

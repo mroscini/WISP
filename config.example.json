@@ -1,0 +1,55 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8787,
+    "max_upload_bytes": 1048576
+  },
+  "paths": {
+    "data_dir": "./data",
+    "embedding_model": "/mnt/emmc/minilm/model_qint8_arm64.onnx",
+    "embedding_tokenizer": "/mnt/emmc/minilm/tokenizer.json",
+    "reranker_model": "/mnt/emmc/reranker/model_qint8_arm64.onnx",
+    "reranker_tokenizer": "/mnt/emmc/reranker/tokenizer.json",
+    "llama_model": "/mnt/emmc/models/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+  },
+  "llm": {
+    "url": "http://127.0.0.1:8080/v1/chat/completions",
+    "model": "qwen",
+    "timeout_seconds": 120,
+    "temperature": 0.2,
+    "max_tokens": 96
+  },
+  "rag": {
+    "top_k": 10,
+    "lexical_k": 10,
+    "direct_answer_threshold": 1.5,
+    "max_chunk_chars": 900
+  },
+  "child": {
+    "display_name": "",
+    "age_range": "6-8",
+    "story_preferences": "Avventure brevi e rassicuranti"
+  },
+  "characters": [
+    {
+      "id": "spider-man",
+      "name": "Spider-Man",
+      "description": "Un eroe amichevole, spiritoso e incoraggiante.",
+      "instructions": "Parla in italiano semplice. Usa frasi brevi. Non fingere di conoscere fatti personali non presenti nei contenuti autorizzati.",
+      "voice_id": "disabled"
+    }
+  ],
+  "active_character_id": "spider-man",
+  "audio": {
+    "stt_provider": "disabled",
+    "tts_provider": "disabled",
+    "input_device": "",
+    "output_device": "",
+    "record_seconds": 6,
+    "sample_rate": 16000,
+    "vosk_model": "/mnt/emmc/vosk-model-small-it-0.22",
+    "tts_executable": "piper",
+    "tts_arguments": ["--model", "/path/to/authorized-voice.onnx", "--output_file", "{output}"]
+  }
+}
+

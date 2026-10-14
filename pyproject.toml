@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wisp-voice"
+version = "0.1.0"
+description = "A local-first conversational voice device for small ARM computers."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "WISP contributors" }]
+keywords = ["embedded", "local-ai", "rag", "llama-cpp", "voice"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "Flask>=3.1,<4",
+  "numpy>=2.0,<3",
+  "onnxruntime>=1.20,<2",
+  "tokenizers>=0.20,<1",
+]
+
+[project.optional-dependencies]
+audio = ["vosk>=0.3.45,<1"]
+dev = ["pytest>=8,<10", "pytest-cov>=5,<8"]
+production = ["gunicorn>=23,<24"]
+
+[project.scripts]
+wisp = "wisp.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+wisp = ["web/templates/*.html", "web/static/*.css", "web/static/*.js"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+norecursedirs = ["tests/runtime", ".test-tmp", ".pip-tmp"]
+

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">Segnaposto per la fotografia del prototipo WISP</title>
+  <desc id="desc">Sagoma di un piccolo telefono su sfondo verde scuro.</desc>
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="42%" r="62%">
+      <stop offset="0" stop-color="#315d46"/>
+      <stop offset="1" stop-color="#101813"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" rx="28" fill="url(#glow)"/>
+  <circle cx="600" cy="290" r="176" fill="#c7e85d" opacity=".12"/>
+  <path d="M510 170c0-25 20-45 45-45h90c25 0 45 20 45 45v234c0 25-20 45-45 45h-90c-25 0-45-20-45-45z" fill="#f5f3ec"/>
+  <circle cx="600" cy="384" r="24" fill="#2f6d4f"/>
+  <path d="M562 205h76M562 229h55M562 253h35" stroke="#2f6d4f" stroke-width="10" stroke-linecap="round"/>
+  <text x="600" y="525" text-anchor="middle" fill="#f5f3ec" font-family="system-ui, sans-serif" font-size="30" font-weight="700" letter-spacing="5">FOTO DEL PROTOTIPO</text>
+  <text x="600" y="565" text-anchor="middle" fill="#b8c5bd" font-family="system-ui, sans-serif" font-size="18">Sostituire con uno scatto del dispositivo fisico</text>
+</svg>

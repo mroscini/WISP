@@ -1,0 +1,24 @@
+[Unit]
+Description=WISP local configuration panel
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/mnt/emmc
+
+[Service]
+Type=simple
+User=wisp
+Group=wisp
+WorkingDirectory=/mnt/emmc/wisp
+EnvironmentFile=-/etc/wisp/wisp.env
+ExecStart=/mnt/emmc/wisp/.venv/bin/gunicorn --bind 0.0.0.0:8787 --workers 1 --threads 4 --access-logfile - wisp.web.wsgi:app
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/mnt/emmc/wisp/data
+
+[Install]
+WantedBy=multi-user.target
+
