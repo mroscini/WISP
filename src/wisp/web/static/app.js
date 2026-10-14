@@ -42,26 +42,21 @@ function renderStatus() {
   const online = status.llm_online;
   $(".connection").classList.toggle("online", online);
   $("#connection-label").textContent = online ? "Motore AI online" : "Motore AI non avviato";
-  const memoryUsed = status.memory.total && status.memory.available ? status.memory.total - status.memory.available : null;
   $("#metrics").innerHTML = [
     [online ? "Online" : "Offline", "Servizio AI"],
     [status.documents, "Documenti"],
     [status.indexed_chunks, "Frammenti RAG"],
-    [formatBytes(memoryUsed), "RAM utilizzata"],
   ].map(([value, label]) => `<div class="metric"><b>${value}</b><span>${label}</span></div>`).join("");
   $("#index-count").textContent = status.indexed_chunks;
   const rows = {
     "Motore AI": online ? "Online" : "Offline",
     "Modello configurato": status.model,
     "Personaggio attivo": status.active_character_id,
-    "RAM totale": formatBytes(status.memory.total),
-    "RAM disponibile": formatBytes(status.memory.available),
     "Spazio libero": formatBytes(status.disk.free),
     "Carico sistema": status.load_average?.join(" · ") || "Non disponibile",
     "Ingresso audio": status.audio.input_device || "Non configurato",
     "STT": status.audio.stt_provider,
     "TTS": status.audio.tts_provider,
-    "Autenticazione": "Disattivata",
     "Documenti indicizzati": status.indexed_chunks,
   };
   $("#status-detail").innerHTML = Object.entries(rows).map(([key, value]) => `<div class="status-item"><span>${key}</span><b>${value}</b></div>`).join("");

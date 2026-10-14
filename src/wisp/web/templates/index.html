@@ -3,62 +3,63 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101813">
-  <title>WISP · Local voice companion</title>
+  <meta name="theme-color" content="#ff5e78">
+  <title>WISP</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="#dashboard" aria-label="WISP home">
       <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-      <span><strong>WISP</strong><small>LOCAL VOICE COMPANION</small></span>
+      <span><strong>WISP</strong><small>STORIE, VOCI, AVVENTURE</small></span>
     </a>
     <div class="connection"><span id="connection-dot"></span><span id="connection-label">Connessione…</span></div>
   </header>
 
   <div class="shell">
     <nav class="sidebar" aria-label="Sezioni">
-      <button class="nav-item active" data-view="dashboard"><span>◫</span>Panoramica</button>
-      <button class="nav-item" data-view="characters"><span>✦</span>Personaggi</button>
-      <button class="nav-item" data-view="child"><span>○</span>Bambino</button>
-      <button class="nav-item" data-view="knowledge"><span>≡</span>Storie e conoscenza</button>
-      <button class="nav-item" data-view="voices"><span>◖</span>Voci</button>
-      <button class="nav-item" data-view="device"><span>⌁</span>Dispositivo</button>
-      <div class="local-note"><b>100% locale</b><span>Nessun servizio cloud</span></div>
+      <button class="nav-item active" data-view="dashboard"><span>☀</span>Casa</button>
+      <button class="nav-item" data-view="characters"><span>✦</span>Amici</button>
+      <button class="nav-item" data-view="child"><span>♥</span>Per te</button>
+      <button class="nav-item" data-view="knowledge"><span>☁</span>Storie</button>
+      <button class="nav-item" data-view="voices"><span>♪</span>Voci</button>
+      <button class="nav-item" data-view="device"><span>⚡</span>Come sta</button>
+      <div class="local-note"><b>Tutto qui con te</b><span>WISP non usa il cloud</span></div>
     </nav>
 
     <main>
       <section class="view active" id="view-dashboard">
         <div class="hero">
           <div>
-            <p class="eyebrow">IL TUO DISPOSITIVO</p>
-            <h1>Una piccola voce,<br><em>tutta qui.</em></h1>
-            <p>Configura personaggi, storie e conoscenza. WISP continua a conversare anche quando questa pagina è chiusa.</p>
+            <p class="eyebrow">CIAO, WISP È SVEGLIO!</p>
+            <h1>Che avventura<br><em>prepariamo oggi?</em></h1>
+            <p>Scegli un amico, inventa una storia e dagli una voce. Tutto resta vicino a te, dentro WISP.</p>
           </div>
           <div class="orb" aria-hidden="true"><span></span></div>
         </div>
         <div class="metrics" id="metrics"></div>
         <div class="grid-two">
           <article class="panel">
-            <div class="panel-heading"><div><p class="eyebrow">PERSONAGGIO ATTIVO</p><h2 id="active-name">—</h2></div><span class="badge">In uso</span></div>
+            <div class="panel-heading"><div><p class="eyebrow">OGGI PARLI CON</p><h2 id="active-name">—</h2></div><span class="badge">Pronto!</span></div>
             <p id="active-description" class="muted">Caricamento…</p>
-            <button class="text-button" data-go="characters">Gestisci personaggi →</button>
+            <button class="text-button" data-go="characters">Scegli un altro amico →</button>
           </article>
-          <article class="panel warning-panel">
-            <p class="eyebrow">NOTA DI RETE</p>
-            <h2>Accesso locale aperto</h2>
-            <p class="muted">L’autenticazione è disattivata. Mantieni WISP su una rete fidata e non esporre la porta a Internet.</p>
+          <article class="panel story-panel">
+            <p class="eyebrow">UNA NUOVA IDEA?</p>
+            <h2>Inventiamo una storia</h2>
+            <p class="muted">Aggiungi un racconto alla biblioteca e trasformalo nella prossima avventura.</p>
+            <button class="text-button" data-go="knowledge">Apri la biblioteca →</button>
           </article>
         </div>
       </section>
 
       <section class="view" id="view-characters">
-        <div class="section-title"><div><p class="eyebrow">IDENTITÀ</p><h1>Personaggi</h1><p>Crea voci e personalità diverse senza modificare il codice.</p></div><button class="primary" id="new-character">+ Nuovo personaggio</button></div>
+        <div class="section-title"><div><p class="eyebrow">LA COMPAGNIA DI WISP</p><h1>I tuoi amici</h1><p>Crea personalità diverse e scegli chi vivrà la prossima avventura.</p></div><button class="primary" id="new-character">+ Crea un amico</button></div>
         <div class="card-grid" id="character-list"></div>
       </section>
 
       <section class="view" id="view-child">
-        <div class="section-title"><div><p class="eyebrow">ESPERIENZA</p><h1>Bambino</h1><p>Salva solo le informazioni davvero utili alla conversazione.</p></div></div>
+        <div class="section-title"><div><p class="eyebrow">UNA STORIA SU MISURA</p><h1>Parlami di te</h1><p>Bastano poche informazioni per rendere ogni racconto più vicino.</p></div></div>
         <form class="panel form-stack" id="child-form">
           <label>Nome usato dal personaggio<input name="display_name" maxlength="80" placeholder="Facoltativo"></label>
           <label>Fascia d’età<select name="age_range"><option>3-5</option><option>6-8</option><option>9-12</option><option>13+</option></select></label>
@@ -68,18 +69,18 @@
       </section>
 
       <section class="view" id="view-knowledge">
-        <div class="section-title"><div><p class="eyebrow">RAG LOCALE</p><h1>Storie e conoscenza</h1><p>Testi autorizzati, indicizzati direttamente sul dispositivo.</p></div><div class="actions"><label class="secondary upload">Carica file<input id="file-upload" type="file" accept=".txt,.md"></label><button class="primary" id="new-document">+ Scrivi testo</button></div></div>
+        <div class="section-title"><div><p class="eyebrow">LA BIBLIOTECA MAGICA</p><h1>Storie e scoperte</h1><p>Scrivi qualcosa di nuovo o porta con te un racconto che ami.</p></div><div class="actions"><label class="secondary upload">Porta un file<input id="file-upload" type="file" accept=".txt,.md"></label><button class="primary" id="new-document">+ Nuova storia</button></div></div>
         <div class="index-strip"><div><b id="index-count">—</b><span>frammenti indicizzati</span></div><button id="rebuild-index" class="secondary">Ricostruisci indice</button></div>
         <div class="document-list" id="document-list"></div>
       </section>
 
       <section class="view" id="view-voices">
-        <div class="section-title"><div><p class="eyebrow">AUDIO</p><h1>Voci</h1><p>Solo motori e voci locali di cui possiedi i diritti.</p></div></div>
+        <div class="section-title"><div><p class="eyebrow">COME SUONA?</p><h1>Le voci</h1><p>Scegli una voce originale e autorizzata per ogni amico.</p></div></div>
         <div class="panel" id="voice-list"></div>
       </section>
 
       <section class="view" id="view-device">
-        <div class="section-title"><div><p class="eyebrow">DIAGNOSTICA</p><h1>Dispositivo</h1><p>Dati reali del sistema, senza valori simulati.</p></div><button class="secondary" id="refresh-status">Aggiorna</button></div>
+        <div class="section-title"><div><p class="eyebrow">TUTTO BENE?</p><h1>Come sta WISP</h1><p>Un’occhiata veloce al motore, alle voci e alle storie.</p></div><button class="secondary" id="refresh-status">Controlla ora</button></div>
         <div class="panel status-table" id="status-detail"></div>
       </section>
     </main>
