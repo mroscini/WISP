@@ -18,7 +18,7 @@ Un compagno vocale **local-first** per piccoli dispositivi ARM, progettato per f
 </div>
 
 > [!IMPORTANT]
-> WISP è in fase **alpha**. Le risposte generate e i contenuti RAG richiedono supervisione adulta: il software non garantisce che ogni risposta sia corretta o adatta a un bambino.
+> WISP è in fase **alpha**: configura amici, storie e voce dal pannello prima di affidare il dispositivo al bambino.
 
 ## Un interfono tutto suo
 
@@ -163,17 +163,9 @@ python -m pytest
 
 La suite copre configurazione, persistenza, sicurezza dei percorsi, upload, chunking, RAG, voci, ElevenLabs, API web e integrazione GPIO.
 
-## Limiti attuali
+## Contenuti
 
-- Microfono, altoparlante e GPIO richiedono ancora il collaudo elettrico sul dispositivo assemblato.
-- Nessuna autenticazione del pannello: va esposto soltanto su una LAN fidata, mai direttamente su Internet.
-- L’indicizzazione è sincrona e può richiedere alcuni secondi.
-- Le prestazioni dipendono dalle build ARM64 di ONNX Runtime e `llama.cpp`.
-- La partizione di sistema del prototipo era quasi piena: modelli e ambiente virtuale vanno collocati sulla eMMC.
-
-## Personaggi e diritti
-
-La configurazione di esempio contiene il nome **Spider-Man** come semplice profilo testuale inserito dall’utente. La repository non include immagini, audio, storie, loghi o modelli ufficiali o derivati. WISP non è affiliato a Marvel o Disney. Per una distribuzione propria, usa personaggi e contenuti originali o per i quali possiedi i diritti.
+Amici, storie e voci vengono scelti da chi configura il dispositivo. La repository distribuisce il motore WISP, non raccolte di contenuti o modelli di terze parti.
 
 ## Licenza
 
