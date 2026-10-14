@@ -2,7 +2,8 @@
   "server": {
     "host": "0.0.0.0",
     "port": 8787,
-    "max_upload_bytes": 1048576
+    "max_upload_bytes": 1048576,
+    "public_url": "http://192.168.0.250:8787"
   },
   "paths": {
     "data_dir": "./data",
@@ -10,7 +11,8 @@
     "embedding_tokenizer": "/mnt/emmc/minilm/tokenizer.json",
     "reranker_model": "/mnt/emmc/reranker/model_qint8_arm64.onnx",
     "reranker_tokenizer": "/mnt/emmc/reranker/tokenizer.json",
-    "llama_model": "/mnt/emmc/models/qwen2.5-1.5b-instruct-q4_k_m.gguf"
+    "llama_model": "/mnt/emmc/models/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "voices_dir": "/mnt/emmc/wisp/voices"
   },
   "llm": {
     "url": "http://127.0.0.1:8080/v1/chat/completions",

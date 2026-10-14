@@ -7,12 +7,13 @@ from .audio import AlsaPlayer, AlsaRecorder, CommandTextToSpeech, VoskFileSpeech
 from .config import ConfigStore
 from .models import Character
 from .voice_pipeline import VoicePipeline
+from .voices import VoiceStore
 from .web import create_app
 from .web.app import Runtime
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="wisp", description="WISP local voice companion")
+    parser = argparse.ArgumentParser(prog="wisp", description="WISP local conversational device")
     parser.add_argument("--config", help="Path to config.json")
     subparsers = parser.add_subparsers(dest="command", required=True)
     serve = subparsers.add_parser("serve", help="Run the local configuration panel")
@@ -35,19 +36,25 @@ def main() -> None:
         return
     if args.command == "voice-once":
         audio = config["audio"]
-        if audio.get("stt_provider") != "vosk-file" or audio.get("tts_provider") != "command":
-            parser.error("voice-once requires stt_provider=vosk-file and tts_provider=command")
+        if audio.get("stt_provider") != "vosk-file":
+            parser.error("voice-once requires stt_provider=vosk-file")
         runtime = Runtime(store)
         active = next(
             Character.from_dict(item)
             for item in config["characters"]
             if item["id"] == config["active_character_id"]
         )
+        if active.voice_id == "command":
+            tts = CommandTextToSpeech(audio["tts_executable"], list(audio["tts_arguments"]))
+        elif active.voice_id == "disabled":
+            parser.error("Choose a voice for the active character first")
+        else:
+            tts = VoiceStore(config["paths"]["voices_dir"]).synthesizer(active.voice_id)
         pipeline = VoicePipeline(
             AlsaRecorder(audio.get("input_device", ""), int(audio.get("sample_rate", 16_000))),
             VoskFileSpeechToText(audio["vosk_model"]),
             runtime.conversation(),
-            CommandTextToSpeech(audio["tts_executable"], list(audio["tts_arguments"])),
+            tts,
             AlsaPlayer(audio.get("output_device", "")),
             config["paths"]["data_dir"],
         )

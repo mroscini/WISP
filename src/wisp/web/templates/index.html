@@ -20,10 +20,8 @@
     <nav class="sidebar" aria-label="Sezioni">
       <button class="nav-item active" data-view="dashboard"><span>☀</span>Casa</button>
       <button class="nav-item" data-view="characters"><span>✦</span>Amici</button>
-      <button class="nav-item" data-view="child"><span>♥</span>Per te</button>
       <button class="nav-item" data-view="knowledge"><span>☁</span>Storie</button>
       <button class="nav-item" data-view="voices"><span>♪</span>Voci</button>
-      <button class="nav-item" data-view="device"><span>⚡</span>Come sta</button>
       <div class="local-note"><b>Tutto qui con te</b><span>WISP non usa il cloud</span></div>
     </nav>
 
@@ -32,23 +30,20 @@
         <div class="hero">
           <div>
             <p class="eyebrow">CIAO, WISP È SVEGLIO!</p>
-            <h1>Che avventura<br><em>prepariamo oggi?</em></h1>
-            <p>Scegli un amico, inventa una storia e dagli una voce. Tutto resta vicino a te, dentro WISP.</p>
+            <h1>Che cosa facciamo<br><em>oggi?</em></h1>
+            <p>Scegli un amico, aggiungi una storia oppure prova una voce.</p>
           </div>
           <div class="orb" aria-hidden="true"><span></span></div>
         </div>
-        <div class="metrics" id="metrics"></div>
         <div class="grid-two">
           <article class="panel">
             <div class="panel-heading"><div><p class="eyebrow">OGGI PARLI CON</p><h2 id="active-name">—</h2></div><span class="badge">Pronto!</span></div>
             <p id="active-description" class="muted">Caricamento…</p>
             <button class="text-button" data-go="characters">Scegli un altro amico →</button>
           </article>
-          <article class="panel story-panel">
-            <p class="eyebrow">UNA NUOVA IDEA?</p>
-            <h2>Inventiamo una storia</h2>
-            <p class="muted">Aggiungi un racconto alla biblioteca e trasformalo nella prossima avventura.</p>
-            <button class="text-button" data-go="knowledge">Apri la biblioteca →</button>
+          <article class="panel access-panel">
+            <div><p class="eyebrow">APRI DAL TELEFONO</p><h2>Inquadra e vai</h2><a id="access-url" href="#">Caricamento…</a><button class="text-button" id="copy-access">Copia indirizzo</button></div>
+            <img src="/access-qr.svg" alt="QR code per aprire WISP">
           </article>
         </div>
       </section>
@@ -58,30 +53,20 @@
         <div class="card-grid" id="character-list"></div>
       </section>
 
-      <section class="view" id="view-child">
-        <div class="section-title"><div><p class="eyebrow">UNA STORIA SU MISURA</p><h1>Parlami di te</h1><p>Bastano poche informazioni per rendere ogni racconto più vicino.</p></div></div>
-        <form class="panel form-stack" id="child-form">
-          <label>Nome usato dal personaggio<input name="display_name" maxlength="80" placeholder="Facoltativo"></label>
-          <label>Fascia d’età<select name="age_range"><option>3-5</option><option>6-8</option><option>9-12</option><option>13+</option></select></label>
-          <label>Preferenze narrative<textarea name="story_preferences" rows="5" maxlength="1000" placeholder="Temi, tono, durata…"></textarea></label>
-          <div><button class="primary" type="submit">Salva impostazioni</button></div>
-        </form>
-      </section>
-
       <section class="view" id="view-knowledge">
         <div class="section-title"><div><p class="eyebrow">LA BIBLIOTECA MAGICA</p><h1>Storie e scoperte</h1><p>Scrivi qualcosa di nuovo o porta con te un racconto che ami.</p></div><div class="actions"><label class="secondary upload">Porta un file<input id="file-upload" type="file" accept=".txt,.md"></label><button class="primary" id="new-document">+ Nuova storia</button></div></div>
-        <div class="index-strip"><div><b id="index-count">—</b><span>frammenti indicizzati</span></div><button id="rebuild-index" class="secondary">Ricostruisci indice</button></div>
+        <div class="index-strip"><div><b id="index-count">—</b><span>pezzi di storia pronti</span></div><button id="rebuild-index" class="secondary">Prepara le storie</button></div>
         <div class="document-list" id="document-list"></div>
       </section>
 
       <section class="view" id="view-voices">
-        <div class="section-title"><div><p class="eyebrow">COME SUONA?</p><h1>Le voci</h1><p>Scegli una voce originale e autorizzata per ogni amico.</p></div></div>
-        <div class="panel" id="voice-list"></div>
-      </section>
-
-      <section class="view" id="view-device">
-        <div class="section-title"><div><p class="eyebrow">TUTTO BENE?</p><h1>Come sta WISP</h1><p>Un’occhiata veloce al motore, alle voci e alle storie.</p></div><button class="secondary" id="refresh-status">Controlla ora</button></div>
-        <div class="panel status-table" id="status-detail"></div>
+        <div class="section-title"><div><p class="eyebrow">SCEGLI E ASCOLTA</p><h1>Le voci</h1><p>Due voci italiane funzionano direttamente su WISP. Puoi provarle e assegnarle quando crei un amico.</p></div></div>
+        <div class="voice-grid" id="voice-list"></div>
+        <article class="panel external-voice">
+          <div><p class="eyebrow">VUOI UNA VOCE PERSONALIZZATA?</p><h2>Crea una voce con ElevenLabs</h2><p class="muted">Puoi registrare o caricare l’audio sul loro servizio. È esterno, richiede Internet e il cloning è disponibile sui piani a pagamento. Usa soltanto la tua voce o una voce per cui hai il consenso.</p></div>
+          <a class="primary link-button" href="https://elevenlabs.io/voice-cloning" target="_blank" rel="noreferrer">Apri ElevenLabs ↗</a>
+        </article>
+        <audio id="voice-preview" controls hidden></audio>
       </section>
     </main>
   </div>
@@ -91,10 +76,10 @@
       <div class="dialog-head"><div><p class="eyebrow">PERSONAGGIO</p><h2 id="character-dialog-title">Nuovo personaggio</h2></div><button class="icon-button" type="button" data-close-dialog="character-dialog" aria-label="Chiudi">×</button></div>
       <input type="hidden" name="original_id">
       <label>Nome<input name="name" required maxlength="80"></label>
-      <label>Identificatore<input name="id" pattern="[a-z0-9][a-z0-9-]{0,63}" placeholder="creato-dal-nome"></label>
-      <label>Descrizione<textarea name="description" rows="3" maxlength="600"></textarea></label>
-      <label>Istruzioni di comportamento<textarea name="instructions" rows="5" maxlength="2000"></textarea></label>
-      <label>Voce<select name="voice_id"><option value="disabled">Disattivata</option><option value="command">Comando locale</option></select></label>
+      <input type="hidden" name="id">
+      <label>Com’è?<textarea name="description" rows="3" maxlength="600" placeholder="Allegro, curioso, rassicurante…"></textarea></label>
+      <label>Voce<select name="voice_id"></select></label>
+      <details><summary>Personalità avanzata</summary><label>Come deve parlare e comportarsi<textarea name="instructions" rows="5" maxlength="2000"></textarea></label></details>
       <div class="dialog-actions"><button class="secondary" type="button" data-close-dialog="character-dialog">Annulla</button><button class="primary" type="submit" id="save-character">Salva</button></div>
     </form>
   </dialog>

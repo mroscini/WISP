@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import re
+import tempfile
+from io import BytesIO
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_file
 
 from ..config import ConfigError, ConfigStore
 from ..conversation import ConversationService
@@ -12,6 +14,7 @@ from ..llm import LlamaCppClient, LlmError
 from ..models import Character
 from ..rag import HybridRetriever, IndexBuilder, IndexStore, OnnxEmbeddingBackend, OnnxReranker
 from ..storage import DocumentError, DocumentStore
+from ..voices import VoiceError, VoiceStore
 
 
 class Runtime:
@@ -37,6 +40,10 @@ class Runtime:
     @property
     def llm(self):
         return LlamaCppClient(self.config["llm"])
+
+    @property
+    def voices(self):
+        return VoiceStore(self.config["paths"]["voices_dir"])
 
     def models(self):
         config = self.config
@@ -90,12 +97,13 @@ def create_app(config_path: str | Path | None = None, runtime: Runtime | None = 
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; script-src 'self'; style-src 'self'; "
-            "img-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"
+            "img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'"
         )
         return response
 
     @app.errorhandler(ConfigError)
     @app.errorhandler(DocumentError)
+    @app.errorhandler(VoiceError)
     @app.errorhandler(ValueError)
     def bad_request(error):
         return jsonify(error=str(error)), 400
@@ -115,6 +123,25 @@ def create_app(config_path: str | Path | None = None, runtime: Runtime | None = 
     @app.get("/")
     def home():
         return render_template("index.html")
+
+    @app.get("/api/access")
+    def access():
+        url = str(runtime.config["server"].get("public_url") or request.host_url).rstrip("/")
+        return jsonify(url=url)
+
+    @app.get("/access-qr.svg")
+    def access_qr():
+        try:
+            import qrcode
+            from qrcode.image.svg import SvgPathImage
+        except ImportError as error:
+            raise RuntimeError("qrcode is not installed") from error
+        url = str(runtime.config["server"].get("public_url") or request.host_url).rstrip("/")
+        image = qrcode.make(url, image_factory=SvgPathImage, border=2)
+        stream = BytesIO()
+        image.save(stream)
+        stream.seek(0)
+        return send_file(stream, mimetype="image/svg+xml", max_age=0)
 
     @app.get("/api/status")
     def status():
@@ -145,6 +172,8 @@ def create_app(config_path: str | Path | None = None, runtime: Runtime | None = 
         character = Character.from_dict(value)
         if not character.id:
             character.id = re.sub(r"[^a-z0-9]+", "-", character.name.lower()).strip("-")[:64]
+        if character.voice_id not in {"disabled", "command"}:
+            runtime.voices.get(character.voice_id)
         cfg = runtime.config
         if character.id in {item["id"] for item in cfg["characters"]}:
             raise ValueError("Character id already exists")
@@ -159,7 +188,10 @@ def create_app(config_path: str | Path | None = None, runtime: Runtime | None = 
         for index, item in enumerate(cfg["characters"]):
             if item["id"] == character_id:
                 value["id"] = character_id
-                cfg["characters"][index] = Character.from_dict(value).to_dict()
+                character = Character.from_dict(value)
+                if character.voice_id not in {"disabled", "command"}:
+                    runtime.voices.get(character.voice_id)
+                cfg["characters"][index] = character.to_dict()
                 store.save(cfg)
                 return jsonify(cfg["characters"][index])
         raise FileNotFoundError(character_id)
@@ -247,17 +279,24 @@ def create_app(config_path: str | Path | None = None, runtime: Runtime | None = 
 
     @app.get("/api/voices")
     def voices():
-        return jsonify(
-            items=[
-                {"id": "disabled", "name": "Disabled", "available": True},
-                {"id": "command", "name": "Local command", "available": False},
-            ],
-            note="No distributable TTS voice was found on the source device.",
-        )
+        return jsonify(items=runtime.voices.list())
+
+    @app.post("/api/voices/<voice_id>/install")
+    def install_voice(voice_id):
+        return jsonify(runtime.voices.install_piper(voice_id))
 
     @app.post("/api/voices/<voice_id>/preview")
     def voice_preview(voice_id):
-        return jsonify(error=f"Voice preview is unavailable for {voice_id}"), 501
+        value = _payload()
+        text = str(value.get("text", "Ciao! Questa è la mia voce.")).strip()
+        if not 1 <= len(text) <= 240:
+            raise ValueError("Il testo di prova deve contenere da 1 a 240 caratteri")
+        synthesizer = runtime.voices.synthesizer(voice_id)
+        with tempfile.TemporaryDirectory(prefix="wisp-preview-") as temporary:
+            output = Path(temporary) / "preview.wav"
+            synthesizer.synthesize(text, output)
+            payload = output.read_bytes()
+        return send_file(BytesIO(payload), mimetype="audio/wav", download_name="wisp-preview.wav")
 
     return app
 

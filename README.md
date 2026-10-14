@@ -2,7 +2,7 @@
 
 # WISP
 
-### Offline AI voice companion for small ARM devices
+### Conversazioni e storie locali per piccoli dispositivi ARM
 
 Un piccolo telefono, un modello locale e un progetto nato per conversare senza cloud.
 
@@ -34,12 +34,13 @@ Non è una demo cloud travestita da dispositivo embedded. L’inferenza, gli emb
 - Contenuti associabili a uno o più personaggi.
 - Editor e upload sicuro di file `.txt` e `.md`.
 - Ricostruzione locale dell’indice.
-- Dashboard con dati reali su modello, RAM, disco e servizi.
+- Interfaccia essenziale con amici, storie, voci e QR per l’accesso da telefono.
+- Voci italiane Piper Paola e Riccardo, installabili dal pannello e utilizzabili offline.
 - Adattatore Vosk per trascrivere file audio offline.
 - Pipeline componibile ALSA → Vosk → RAG/Qwen → TTS locale → ALSA, disattivata finché hardware e voce non sono configurati.
 - Pannello responsive utilizzabile da telefono o computer.
 
-La cattura live dal microfono e il TTS non sono dichiarati completi: sul dispositivo analizzato non erano collegati alla conversazione e non era presente un motore TTS distribuibile.
+La cattura live dal microfono non è dichiarata completa: sul dispositivo analizzato non era disponibile un ingresso audio. Le voci Piper sono predisposte dal codice ma vanno installate sul dispositivo.
 
 ## Architettura
 
@@ -86,7 +87,15 @@ wisp serve
 
 Su Windows, attiva l’ambiente con `.venv\Scripts\Activate.ps1`. Apri poi `http://127.0.0.1:8787`.
 
-Il pannello parte anche quando i modelli non sono presenti; indicizzazione e chat richiedono i percorsi ONNX/GGUF configurati.
+Il pannello parte anche quando i modelli non sono presenti; indicizzazione e chat richiedono i percorsi ONNX/GGUF configurati. Il QR usa `server.public_url`: sul dispositivo di riferimento punta a `http://192.168.0.250:8787`.
+
+Per installare anche Piper:
+
+```bash
+python -m pip install -e ".[audio]"
+```
+
+Dal pannello **Voci** puoi quindi installare Paola o Riccardo. Il collegamento a ElevenLabs apre un servizio cloud esterno: i cloni non sono esportabili come modelli Piper e, per usarli direttamente in WISP, servirebbe una futura integrazione con la loro API.
 
 ## Avvio su RK3566
 
@@ -144,12 +153,14 @@ src/wisp/
 ├── llm.py              # client streaming per llama.cpp
 ├── rag/                # embedding, indice, retrieval e reranking
 ├── storage.py          # documenti e upload
+├── voices.py           # catalogo e installazione voci Piper
 └── web/                # API e pannello responsive
 ```
 
 ## Limiti noti
 
-- La pipeline live è implementata, ma non verificata sul prototipo perché non viene rilevato un ingresso audio e non è presente una voce TTS distribuibile.
+- La pipeline live è implementata, ma non verificata sul prototipo perché non viene rilevato un ingresso audio.
+- Le voci ElevenLabs restano nel relativo account e richiederebbero Internet, API key e crediti; non sono scaricabili dentro Piper.
 - Nessuna autenticazione del pannello.
 - L’indicizzazione è sincrona e può occupare la richiesta HTTP per alcuni secondi.
 - Il benchmark esistente misura il retrieval del dataset privato originale e non accompagna la repository.
@@ -159,7 +170,7 @@ src/wisp/
 ## Roadmap
 
 - acquisizione ALSA con voice activity detection;
-- riproduzione e TTS locale con voci liberamente distribuibili;
+- verifica end-to-end di riproduzione e TTS Piper sull’hardware;
 - indicizzazione in background con avanzamento;
 - benchmark riproducibile con corpus pubblico;
 - pacchetto di installazione ARM64;

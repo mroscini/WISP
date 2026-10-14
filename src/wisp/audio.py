@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import sys
 import wave
 from pathlib import Path
 
@@ -98,6 +99,25 @@ class CommandTextToSpeech:
             text=True,
             check=True,
             timeout=120,
+            shell=False,
+        )
+
+
+class PiperTextToSpeech:
+    name = "piper"
+
+    def __init__(self, model_path: str | Path):
+        self.model_path = Path(model_path).resolve()
+        try:
+            import piper  # noqa: F401
+        except ImportError as error:
+            raise RuntimeError("piper-tts is not installed") from error
+
+    def synthesize(self, text: str, output_path: str | Path) -> None:
+        subprocess.run(
+            [sys.executable, "-m", "piper", "-m", str(self.model_path), "-f", str(output_path), "--", text],
+            check=True,
+            timeout=180,
             shell=False,
         )
 

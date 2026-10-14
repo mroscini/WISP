@@ -22,6 +22,10 @@ def test_home_and_config_api(tmp_path):
     assert response.status_code == 200
     assert response.get_json()["active_character_id"] == "spider-man"
     assert client.put("/api/config", json={}).status_code == 405
+    assert client.get("/api/access").get_json()["url"] == "http://192.168.0.250:8787"
+    qr = client.get("/access-qr.svg")
+    assert qr.status_code == 200
+    assert qr.mimetype == "image/svg+xml"
 
 
 def test_child_settings_are_allowlisted(tmp_path):
@@ -40,20 +44,38 @@ def test_character_and_document_api(tmp_path):
     client = make_client(tmp_path)
     created = client.post(
         "/api/characters",
-        json={"id": "moon", "name": "Moon", "description": "Calma", "voice_id": "disabled"},
+        json={"name": "Luna Blu", "description": "Calma", "voice_id": "piper-paola"},
     )
     assert created.status_code == 201
-    activated = client.post("/api/characters/moon/activate")
-    assert activated.get_json()["active_id"] == "moon"
+    assert created.get_json()["id"] == "luna-blu"
+    saved = client.get("/api/config").get_json()
+    moon = next(item for item in saved["characters"] if item["id"] == "luna-blu")
+    assert moon["voice_id"] == "piper-paola"
+    activated = client.post("/api/characters/luna-blu/activate")
+    assert activated.get_json()["active_id"] == "luna-blu"
 
     document = client.post(
         "/api/documents",
-        json={"title": "Luna", "text": "Una storia originale.", "character_ids": ["moon"]},
+        json={"title": "Luna", "text": "Una storia originale.", "character_ids": ["luna-blu"]},
     )
     assert document.status_code == 201
     document_id = document.get_json()["id"]
     assert client.get(f"/api/documents/{document_id}").get_json()["title"] == "Luna"
     assert client.delete(f"/api/documents/{document_id}").status_code == 204
+
+
+def test_voice_catalog_exposes_piper_presets(tmp_path):
+    client = make_client(tmp_path)
+    response = client.get("/api/voices")
+    assert response.status_code == 200
+    voices = {item["id"]: item for item in response.get_json()["items"]}
+    assert voices["piper-paola"]["model"] == "it_IT-paola-medium"
+    assert voices["piper-riccardo"]["model"] == "it_IT-riccardo-x_low"
+    rejected = client.post(
+        "/api/characters",
+        json={"name": "Voce rotta", "voice_id": "not-a-real-voice"},
+    )
+    assert rejected.status_code == 404
 
 
 def test_upload_guards(tmp_path):

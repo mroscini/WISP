@@ -1,4 +1,4 @@
-const state = { config: null, status: null, documents: [] };
+const state = { config: null, status: null, documents: [], voices: [], accessUrl: "" };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -22,12 +22,10 @@ function toast(message, error = false) {
   toast.timer = setTimeout(() => node.classList.remove("show"), 2800);
 }
 
-function formatBytes(value) {
-  if (value == null) return "Non disponibile";
-  const units = ["B", "KB", "MB", "GB"];
-  let size = Number(value), unit = 0;
-  while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit += 1; }
-  return `${size.toFixed(unit > 1 ? 1 : 0)} ${units[unit]}`;
+function escapeHtml(value) {
+  const node = document.createElement("span");
+  node.textContent = String(value ?? "");
+  return node.innerHTML;
 }
 
 function switchView(name) {
@@ -36,84 +34,84 @@ function switchView(name) {
   history.replaceState(null, "", `#${name}`);
 }
 
+function voiceName(voiceId) {
+  if (!voiceId || voiceId === "disabled") return "Nessuna voce";
+  return state.voices.find(item => item.id === voiceId)?.name || voiceId;
+}
+
 function renderStatus() {
-  const status = state.status;
-  if (!status) return;
-  const online = status.llm_online;
+  const online = Boolean(state.status?.llm_online);
   $(".connection").classList.toggle("online", online);
-  $("#connection-label").textContent = online ? "Motore AI online" : "Motore AI non avviato";
-  $("#metrics").innerHTML = [
-    [online ? "Online" : "Offline", "Servizio AI"],
-    [status.documents, "Documenti"],
-    [status.indexed_chunks, "Frammenti RAG"],
-  ].map(([value, label]) => `<div class="metric"><b>${value}</b><span>${label}</span></div>`).join("");
-  $("#index-count").textContent = status.indexed_chunks;
-  const rows = {
-    "Motore AI": online ? "Online" : "Offline",
-    "Modello configurato": status.model,
-    "Personaggio attivo": status.active_character_id,
-    "Spazio libero": formatBytes(status.disk.free),
-    "Carico sistema": status.load_average?.join(" · ") || "Non disponibile",
-    "Ingresso audio": status.audio.input_device || "Non configurato",
-    "STT": status.audio.stt_provider,
-    "TTS": status.audio.tts_provider,
-    "Documenti indicizzati": status.indexed_chunks,
-  };
-  $("#status-detail").innerHTML = Object.entries(rows).map(([key, value]) => `<div class="status-item"><span>${key}</span><b>${value}</b></div>`).join("");
+  $("#connection-label").textContent = online ? "WISP è pronto" : "WISP si sta svegliando";
+  $("#index-count").textContent = state.status?.indexed_chunks ?? "—";
 }
 
 function renderCharacters() {
   const activeId = state.config.active_character_id;
   const characters = state.config.characters;
   $("#character-list").innerHTML = characters.map(character => `
-    <article class="character-card ${character.id === activeId ? "active" : ""}" data-id="${character.id}">
-      <span class="badge">${character.id === activeId ? "In uso" : "Disponibile"}</span>
+    <article class="character-card ${character.id === activeId ? "active" : ""}" data-id="${escapeHtml(character.id)}">
+      <span class="badge">${character.id === activeId ? "Parla ora" : "Amico"}</span>
       <h3>${escapeHtml(character.name)}</h3>
-      <p class="muted">${escapeHtml(character.description || "Nessuna descrizione")}</p>
-      <small>Voce: ${escapeHtml(character.voice_id)}</small>
+      <p class="muted">${escapeHtml(character.description || "Un nuovo amico di WISP")}</p>
+      <small>Voce: ${escapeHtml(voiceName(character.voice_id))}</small>
       <footer>
-        ${character.id !== activeId ? '<button class="secondary activate-character">Attiva</button>' : ""}
+        ${character.id !== activeId ? '<button class="primary activate-character">Scegli</button>' : ""}
         <button class="secondary edit-character">Modifica</button>
         ${characters.length > 1 ? '<button class="secondary delete-character">Elimina</button>' : ""}
       </footer>
     </article>`).join("");
   const active = characters.find(item => item.id === activeId);
   $("#active-name").textContent = active?.name || "—";
-  $("#active-description").textContent = active?.description || "Nessuna descrizione";
-  const child = state.config.child;
-  const form = $("#child-form");
-  form.elements.display_name.value = child.display_name || "";
-  form.elements.age_range.value = child.age_range || "6-8";
-  form.elements.story_preferences.value = child.story_preferences || "";
-  $("#document-characters").innerHTML = characters.map(item => `<label><input type="checkbox" name="character_ids" value="${item.id}"> ${escapeHtml(item.name)}</label>`).join("");
+  $("#active-description").textContent = active?.description || "Un nuovo amico di WISP";
+  $("#document-characters").innerHTML = characters.map(item => `<label><input type="checkbox" name="character_ids" value="${escapeHtml(item.id)}"> ${escapeHtml(item.name)}</label>`).join("");
 }
 
 function renderDocuments() {
   const root = $("#document-list");
   if (!state.documents.length) {
-    root.innerHTML = '<div class="empty">Nessun contenuto. Scrivi una storia o carica un file UTF-8.</div>';
+    root.innerHTML = '<div class="empty">Nessuna storia. Scrivine una oppure porta un file.</div>';
     return;
   }
   root.innerHTML = state.documents.map(item => `
-    <article class="document-row" data-id="${item.id}">
-      <div><h3>${escapeHtml(item.title)}</h3><small>${item.character_count} caratteri · ${item.character_ids?.length ? item.character_ids.join(", ") : "tutti i personaggi"}</small></div>
+    <article class="document-row" data-id="${escapeHtml(item.id)}">
+      <div><h3>${escapeHtml(item.title)}</h3><small>${item.character_count} caratteri · ${item.character_ids?.length ? item.character_ids.join(", ") : "tutti gli amici"}</small></div>
       <div><button class="secondary edit-document">Modifica</button><button class="secondary delete-document">Elimina</button></div>
     </article>`).join("");
 }
 
-function escapeHtml(value) {
-  const node = document.createElement("span");
-  node.textContent = String(value ?? "");
-  return node.innerHTML;
+function renderVoices() {
+  $("#voice-list").innerHTML = state.voices.map(item => `
+    <article class="voice-card" data-id="${escapeHtml(item.id)}">
+      <div class="voice-face" aria-hidden="true">${item.name.slice(0, 1)}</div>
+      <div><p class="eyebrow">PIPER · OFFLINE</p><h2>${escapeHtml(item.name)}</h2><p class="muted">${escapeHtml(item.description)}</p></div>
+      <button class="${item.available ? "secondary preview-voice" : "primary install-voice"}">${item.available ? "Ascolta" : "Installa"}</button>
+    </article>`).join("");
+
+  const select = $("#character-form select[name=voice_id]");
+  const current = select.value;
+  select.innerHTML = '<option value="disabled">Senza voce</option>' + state.voices.map(item =>
+    `<option value="${escapeHtml(item.id)}" ${item.available ? "" : "disabled"}>${escapeHtml(item.name)}${item.available ? "" : " — da installare"}</option>`
+  ).join("");
+  select.value = [...select.options].some(option => option.value === current) ? current : "disabled";
 }
 
 async function loadAll() {
-  const [config, status, documents, voices] = await Promise.all([
-    api("/api/config"), api("/api/status"), api("/api/documents"), api("/api/voices"),
+  const [config, status, documents, voices, access] = await Promise.all([
+    api("/api/config"), api("/api/status"), api("/api/documents"), api("/api/voices"), api("/api/access"),
   ]);
-  state.config = config; state.status = status; state.documents = documents.items;
-  renderStatus(); renderCharacters(); renderDocuments();
-  $("#voice-list").innerHTML = voices.items.map(item => `<div class="status-item"><span>${escapeHtml(item.name)}</span><b>${item.available ? "Disponibile" : "Da configurare"}</b></div>`).join("") + `<p class="muted">${escapeHtml(voices.note)}</p>`;
+  state.config = config;
+  state.status = status;
+  state.documents = documents.items;
+  state.voices = voices.items;
+  state.accessUrl = access.url;
+  const accessLink = $("#access-url");
+  accessLink.textContent = access.url;
+  accessLink.href = access.url;
+  renderStatus();
+  renderVoices();
+  renderCharacters();
+  renderDocuments();
 }
 
 function openCharacter(character = null) {
@@ -125,22 +123,46 @@ function openCharacter(character = null) {
   form.elements.description.value = character?.description || "";
   form.elements.instructions.value = character?.instructions || "";
   form.elements.voice_id.value = character?.voice_id || "disabled";
-  form.elements.id.disabled = Boolean(character);
-  $("#character-dialog-title").textContent = character ? "Modifica personaggio" : "Nuovo personaggio";
+  $("#character-dialog-title").textContent = character ? "Modifica amico" : "Nuovo amico";
   $("#character-dialog").showModal();
 }
 
 async function openDocument(id = null) {
   const form = $("#document-form");
   form.reset();
-  let document = null;
-  if (id) document = await api(`/api/documents/${id}`);
-  form.elements.id.value = document?.id || "";
-  form.elements.title.value = document?.title || "";
-  form.elements.text.value = document?.text || "";
-  $$("input[name=character_ids]", form).forEach(node => node.checked = document?.character_ids?.includes(node.value) || false);
-  $("#document-dialog-title").textContent = document ? "Modifica testo" : "Nuovo testo";
+  const documentItem = id ? await api(`/api/documents/${id}`) : null;
+  form.elements.id.value = documentItem?.id || "";
+  form.elements.title.value = documentItem?.title || "";
+  form.elements.text.value = documentItem?.text || "";
+  $$("input[name=character_ids]", form).forEach(node => node.checked = documentItem?.character_ids?.includes(node.value) || false);
+  $("#document-dialog-title").textContent = documentItem ? "Modifica storia" : "Nuova storia";
   $("#document-dialog").showModal();
+}
+
+async function previewVoice(voiceId) {
+  const response = await fetch(`/api/voices/${voiceId}/preview`, jsonOptions("POST", { text: "Ciao! Sono pronto per una nuova avventura." }));
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || `HTTP ${response.status}`);
+  }
+  const player = $("#voice-preview");
+  if (player.src) URL.revokeObjectURL(player.src);
+  player.src = URL.createObjectURL(await response.blob());
+  player.hidden = false;
+  await player.play();
+}
+
+async function copyAccessUrl() {
+  if (navigator.clipboard) await navigator.clipboard.writeText(state.accessUrl);
+  else {
+    const field = document.createElement("textarea");
+    field.value = state.accessUrl;
+    document.body.append(field);
+    field.select();
+    document.execCommand("copy");
+    field.remove();
+  }
+  toast("Indirizzo copiato");
 }
 
 document.addEventListener("click", async event => {
@@ -150,68 +172,78 @@ document.addEventListener("click", async event => {
   if (navigation) switchView(navigation.dataset.view || navigation.dataset.go);
   if (event.target.id === "new-character") openCharacter();
   if (event.target.id === "new-document") await openDocument();
-  if (event.target.id === "refresh-status") { state.status = await api("/api/status"); renderStatus(); toast("Stato aggiornato"); }
+  if (event.target.id === "copy-access") await copyAccessUrl();
+
+  const voiceCard = event.target.closest(".voice-card");
+  if (voiceCard && event.target.matches(".install-voice")) {
+    event.target.disabled = true;
+    event.target.textContent = "Installazione…";
+    try { await api(`/api/voices/${voiceCard.dataset.id}/install`, { method: "POST" }); await loadAll(); toast("Voce installata"); }
+    catch (error) { toast(error.message, true); event.target.disabled = false; event.target.textContent = "Installa"; }
+  }
+  if (voiceCard && event.target.matches(".preview-voice")) {
+    try { await previewVoice(voiceCard.dataset.id); }
+    catch (error) { toast(error.message, true); }
+  }
+
   const characterCard = event.target.closest(".character-card");
   if (characterCard && event.target.matches(".edit-character")) openCharacter(state.config.characters.find(item => item.id === characterCard.dataset.id));
   if (characterCard && event.target.matches(".activate-character")) {
-    await api(`/api/characters/${characterCard.dataset.id}/activate`, { method: "POST" }); await loadAll(); toast("Personaggio attivato");
+    await api(`/api/characters/${characterCard.dataset.id}/activate`, { method: "POST" }); await loadAll(); toast("Amico scelto");
   }
-  if (characterCard && event.target.matches(".delete-character") && confirm("Eliminare questo personaggio?")) {
-    await api(`/api/characters/${characterCard.dataset.id}`, { method: "DELETE" }); await loadAll(); toast("Personaggio eliminato");
+  if (characterCard && event.target.matches(".delete-character") && confirm("Eliminare questo amico?")) {
+    await api(`/api/characters/${characterCard.dataset.id}`, { method: "DELETE" }); await loadAll(); toast("Amico eliminato");
   }
+
   const documentRow = event.target.closest(".document-row");
   if (documentRow && event.target.matches(".edit-document")) await openDocument(documentRow.dataset.id);
-  if (documentRow && event.target.matches(".delete-document") && confirm("Eliminare questo testo?")) {
-    await api(`/api/documents/${documentRow.dataset.id}`, { method: "DELETE" }); await loadAll(); toast("Testo eliminato");
+  if (documentRow && event.target.matches(".delete-document") && confirm("Eliminare questa storia?")) {
+    await api(`/api/documents/${documentRow.dataset.id}`, { method: "DELETE" }); await loadAll(); toast("Storia eliminata");
   }
   if (event.target.id === "rebuild-index") {
-    event.target.disabled = true; event.target.textContent = "Indicizzazione…";
-    try { const result = await api("/api/index/rebuild", { method: "POST" }); await loadAll(); toast(`${result.chunks} frammenti indicizzati`); }
+    event.target.disabled = true;
+    event.target.textContent = "Preparazione…";
+    try { const result = await api("/api/index/rebuild", { method: "POST" }); await loadAll(); toast(`${result.chunks} pezzi pronti`); }
     catch (error) { toast(error.message, true); }
-    finally { event.target.disabled = false; event.target.textContent = "Ricostruisci indice"; }
+    finally { event.target.disabled = false; event.target.textContent = "Prepara le storie"; }
   }
 });
 
 $("#character-form").addEventListener("submit", async event => {
   event.preventDefault();
-  const form = event.currentTarget;
-  const body = Object.fromEntries(new FormData(form));
-  const original = body.original_id; delete body.original_id;
+  const body = Object.fromEntries(new FormData(event.currentTarget));
+  const original = body.original_id;
+  delete body.original_id;
   try {
     await api(original ? `/api/characters/${original}` : "/api/characters", jsonOptions(original ? "PUT" : "POST", body));
-    $("#character-dialog").close(); await loadAll(); toast("Personaggio salvato");
+    $("#character-dialog").close();
+    await loadAll();
+    toast(original ? "Amico aggiornato" : "Nuovo amico creato");
   } catch (error) { toast(error.message, true); }
 });
 
 $("#document-form").addEventListener("submit", async event => {
   event.preventDefault();
-  const form = event.currentTarget;
-  const data = new FormData(form);
+  const data = new FormData(event.currentTarget);
   const id = data.get("id");
   const body = { title: data.get("title"), text: data.get("text"), character_ids: data.getAll("character_ids") };
   try {
     await api(id ? `/api/documents/${id}` : "/api/documents", jsonOptions(id ? "PUT" : "POST", body));
-    $("#document-dialog").close(); await loadAll(); toast("Testo salvato. Ricostruisci l’indice per applicarlo.");
+    $("#document-dialog").close();
+    await loadAll();
+    toast("Storia salvata");
   } catch (error) { toast(error.message, true); }
-});
-
-$("#child-form").addEventListener("submit", async event => {
-  event.preventDefault();
-  const data = Object.fromEntries(new FormData(event.currentTarget));
-  state.config.child = data;
-  try { state.config.child = await api("/api/child", jsonOptions("PUT", data)); renderCharacters(); toast("Impostazioni salvate"); }
-  catch (error) { toast(error.message, true); }
 });
 
 $("#file-upload").addEventListener("change", async event => {
   if (!event.target.files.length) return;
-  const data = new FormData(); data.append("file", event.target.files[0]);
-  try { await api("/api/documents/upload", { method: "POST", body: data }); await loadAll(); toast("File caricato"); }
+  const data = new FormData();
+  data.append("file", event.target.files[0]);
+  try { await api("/api/documents/upload", { method: "POST", body: data }); await loadAll(); toast("Storia aggiunta"); }
   catch (error) { toast(error.message, true); }
   finally { event.target.value = ""; }
 });
 
 window.addEventListener("unhandledrejection", event => toast(event.reason?.message || "Errore inatteso", true));
-switchView(location.hash.slice(1) || "dashboard");
+switchView(["dashboard", "characters", "knowledge", "voices"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "dashboard");
 loadAll().catch(error => toast(error.message, true));
-

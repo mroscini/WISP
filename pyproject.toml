@@ -21,10 +21,11 @@ dependencies = [
   "numpy>=2.0,<3",
   "onnxruntime>=1.20,<2",
   "tokenizers>=0.20,<1",
+  "qrcode>=8,<9",
 ]
 
 [project.optional-dependencies]
-audio = ["vosk>=0.3.45,<1"]
+audio = ["vosk>=0.3.45,<1", "piper-tts>=1.4,<2"]
 dev = ["pytest>=8,<10", "pytest-cov>=5,<8"]
 production = ["gunicorn>=23,<24"]
 
