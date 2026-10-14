@@ -78,6 +78,50 @@ def test_voice_catalog_exposes_piper_presets(tmp_path):
     assert rejected.status_code == 404
 
 
+def test_elevenlabs_key_is_verified_but_never_returned(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "wisp.web.app.ElevenLabsClient.account",
+        lambda _self: {"subscription": {"tier": "starter"}},
+    )
+    monkeypatch.setattr(
+        "wisp.web.app.ElevenLabsClient.list_voices",
+        lambda _self: [
+            {
+                "id": "elevenlabs:voice-123",
+                "provider_id": "voice-123",
+                "name": "Voce prova",
+                "kind": "elevenlabs",
+                "description": "Test",
+                "available": True,
+            }
+        ],
+    )
+    client = make_client(tmp_path)
+    fake_key = "sk_example_only_not_a_real_key_1234"
+    response = client.post("/api/elevenlabs", json={"api_key": fake_key})
+    assert response.status_code == 200
+    assert response.get_json()["key_hint"] == "••••1234"
+    assert fake_key not in response.get_data(as_text=True)
+    assert fake_key not in client.get("/api/config").get_data(as_text=True)
+    status = client.get("/api/elevenlabs").get_json()
+    assert status["configured"] is True
+    assert status["items"][0]["id"] == "elevenlabs:voice-123"
+    assert client.delete("/api/elevenlabs").status_code == 204
+    assert client.get("/api/elevenlabs").get_json()["configured"] is False
+
+
+def test_first_run_installer_marks_setup_complete(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr("wisp.web.app.subprocess.run", lambda command, **options: calls.append((command, options)))
+    client = make_client(tmp_path)
+    assert client.get("/api/setup").get_json()["complete"] is False
+    response = client.post("/api/setup/install")
+    assert response.status_code == 200
+    assert response.get_json()["complete"] is True
+    assert "audio,hardware,production" in calls[0][0][-1]
+    assert client.get("/api/setup").get_json()["complete"] is True
+
+
 def test_upload_guards(tmp_path):
     client = make_client(tmp_path)
     response = client.post(

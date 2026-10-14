@@ -1,4 +1,4 @@
-const state = { config: null, status: null, documents: [], voices: [], accessUrl: "" };
+const state = { config: null, status: null, documents: [], voices: [], accessUrl: "", elevenlabs: null, setup: null };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 
@@ -84,7 +84,7 @@ function renderVoices() {
   $("#voice-list").innerHTML = state.voices.map(item => `
     <article class="voice-card" data-id="${escapeHtml(item.id)}">
       <div class="voice-face" aria-hidden="true">${item.name.slice(0, 1)}</div>
-      <div><p class="eyebrow">PIPER · OFFLINE</p><h2>${escapeHtml(item.name)}</h2><p class="muted">${escapeHtml(item.description)}</p></div>
+      <div><p class="eyebrow">${item.kind === "elevenlabs" ? "ELEVENLABS · ONLINE" : "PIPER · OFFLINE"}</p><h2>${escapeHtml(item.name)}</h2><p class="muted">${escapeHtml(item.description)}</p></div>
       <button class="${item.available ? "secondary preview-voice" : "primary install-voice"}">${item.available ? "Ascolta" : "Installa"}</button>
     </article>`).join("");
 
@@ -96,19 +96,33 @@ function renderVoices() {
   select.value = [...select.options].some(option => option.value === current) ? current : "disabled";
 }
 
+function renderIntegrations() {
+  const integration = state.elevenlabs;
+  const status = $("#elevenlabs-status");
+  const disconnect = $("#disconnect-elevenlabs");
+  disconnect.hidden = !integration?.configured;
+  if (!integration?.configured) status.textContent = "Non collegato";
+  else if (integration.error) status.textContent = `${integration.key_hint} · ${integration.error}`;
+  else status.textContent = `${integration.key_hint} · Collegato${integration.tier ? ` · Piano ${integration.tier}` : ""}`;
+  $("#first-run").hidden = Boolean(state.setup?.complete);
+}
+
 async function loadAll() {
-  const [config, status, documents, voices, access] = await Promise.all([
-    api("/api/config"), api("/api/status"), api("/api/documents"), api("/api/voices"), api("/api/access"),
+  const [config, status, documents, voices, access, elevenlabs, setup] = await Promise.all([
+    api("/api/config"), api("/api/status"), api("/api/documents"), api("/api/voices"), api("/api/access"), api("/api/elevenlabs"), api("/api/setup"),
   ]);
   state.config = config;
   state.status = status;
   state.documents = documents.items;
-  state.voices = voices.items;
+  state.elevenlabs = elevenlabs;
+  state.setup = setup;
+  state.voices = [...voices.items, ...(elevenlabs.items || [])];
   state.accessUrl = access.url;
   const accessLink = $("#access-url");
   accessLink.textContent = access.url;
   accessLink.href = access.url;
   renderStatus();
+  renderIntegrations();
   renderVoices();
   renderCharacters();
   renderDocuments();
@@ -173,6 +187,17 @@ document.addEventListener("click", async event => {
   if (event.target.id === "new-character") openCharacter();
   if (event.target.id === "new-document") await openDocument();
   if (event.target.id === "copy-access") await copyAccessUrl();
+  if (event.target.id === "disconnect-elevenlabs") {
+    await api("/api/elevenlabs", { method: "DELETE" });
+    await loadAll();
+    toast("ElevenLabs scollegato");
+  }
+  if (event.target.id === "install-requirements") {
+    event.target.disabled = true;
+    event.target.textContent = "Installazione in corso…";
+    try { await api("/api/setup/install", { method: "POST" }); await loadAll(); toast("Componenti installati"); }
+    catch (error) { toast(error.message, true); event.target.disabled = false; event.target.textContent = "Installa componenti"; }
+  }
 
   const voiceCard = event.target.closest(".voice-card");
   if (voiceCard && event.target.matches(".install-voice")) {
@@ -220,6 +245,25 @@ $("#character-form").addEventListener("submit", async event => {
     await loadAll();
     toast(original ? "Amico aggiornato" : "Nuovo amico creato");
   } catch (error) { toast(error.message, true); }
+});
+
+$("#elevenlabs-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const submit = form.querySelector('button[type="submit"]');
+  submit.disabled = true;
+  submit.textContent = "Verifica…";
+  try {
+    const result = await api("/api/elevenlabs", jsonOptions("POST", { api_key: form.elements.api_key.value }));
+    form.reset();
+    state.elevenlabs = result;
+    state.voices = [...state.voices.filter(item => item.kind !== "elevenlabs"), ...(result.items || [])];
+    renderIntegrations();
+    renderVoices();
+    renderCharacters();
+    toast("ElevenLabs collegato");
+  } catch (error) { toast(error.message, true); }
+  finally { submit.disabled = false; submit.textContent = "Salva e verifica"; }
 });
 
 $("#document-form").addEventListener("submit", async event => {

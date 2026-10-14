@@ -29,3 +29,11 @@ def test_duplicate_character_ids_are_rejected(tmp_path):
     with pytest.raises(ConfigError, match="unique"):
         store.save(config)
 
+
+def test_invalid_button_gpio_is_rejected(tmp_path):
+    store = ConfigStore(tmp_path / "config.json")
+    config = store.defaults()
+    config["button"]["line"] = -1
+    with pytest.raises(ConfigError, match="GPIO"):
+        store.save(config)
+

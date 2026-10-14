@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 import tempfile
 from io import BytesIO
 from pathlib import Path
@@ -10,10 +12,12 @@ from flask import Flask, jsonify, render_template, request, send_file
 from ..config import ConfigError, ConfigStore
 from ..conversation import ConversationService
 from ..diagnostics import status_snapshot
+from ..elevenlabs import ElevenLabsClient, ElevenLabsError
 from ..llm import LlamaCppClient, LlmError
 from ..models import Character
 from ..rag import HybridRetriever, IndexBuilder, IndexStore, OnnxEmbeddingBackend, OnnxReranker
 from ..storage import DocumentError, DocumentStore
+from ..secrets import SecretStore
 from ..voices import VoiceError, VoiceStore
 
 
@@ -43,7 +47,13 @@ class Runtime:
 
     @property
     def voices(self):
-        return VoiceStore(self.config["paths"]["voices_dir"])
+        key = self.secrets.get("elevenlabs_api_key")
+        client = ElevenLabsClient(key) if key else None
+        return VoiceStore(self.config["paths"]["voices_dir"], client)
+
+    @property
+    def secrets(self):
+        return SecretStore(self.config["paths"]["data_dir"])
 
     def models(self):
         config = self.config
@@ -104,6 +114,7 @@ def create_app(config_path: str | Path | None = None, runtime: Runtime | None = 
     @app.errorhandler(ConfigError)
     @app.errorhandler(DocumentError)
     @app.errorhandler(VoiceError)
+    @app.errorhandler(ElevenLabsError)
     @app.errorhandler(ValueError)
     def bad_request(error):
         return jsonify(error=str(error)), 400
@@ -150,6 +161,57 @@ def create_app(config_path: str | Path | None = None, runtime: Runtime | None = 
     @app.get("/api/config")
     def get_config():
         return jsonify(runtime.config)
+
+    @app.get("/api/elevenlabs")
+    def elevenlabs_status():
+        key = runtime.secrets.get("elevenlabs_api_key")
+        if not key:
+            return jsonify(configured=False, key_hint=None, items=[])
+        try:
+            items = ElevenLabsClient(key).list_voices()
+            return jsonify(configured=True, key_hint=f"••••{key[-4:]}", items=items)
+        except ElevenLabsError as error:
+            return jsonify(configured=True, key_hint=f"••••{key[-4:]}", items=[], error=str(error))
+
+    @app.post("/api/elevenlabs")
+    def configure_elevenlabs():
+        value = _payload()
+        key = str(value.get("api_key", "")).strip()
+        if not 20 <= len(key) <= 256:
+            raise ValueError("La API key ElevenLabs non sembra valida")
+        client = ElevenLabsClient(key)
+        account = client.account()
+        items = client.list_voices()
+        runtime.secrets.set("elevenlabs_api_key", key)
+        tier = str(account.get("subscription", {}).get("tier", "")).strip() or "account"
+        return jsonify(configured=True, key_hint=f"••••{key[-4:]}", tier=tier, items=items)
+
+    @app.delete("/api/elevenlabs")
+    def disconnect_elevenlabs():
+        runtime.secrets.delete("elevenlabs_api_key")
+        return "", 204
+
+    @app.get("/api/setup")
+    def setup_status():
+        marker = Path(runtime.config["paths"]["data_dir"]).resolve() / ".setup-complete"
+        return jsonify(complete=marker.exists())
+
+    @app.post("/api/setup/install")
+    def setup_install():
+        project_root = Path(__file__).resolve().parents[3]
+        try:
+            subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-e", f"{project_root}[audio,hardware,production]"],
+                check=True,
+                timeout=900,
+                shell=False,
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
+            return jsonify(error="Installazione non riuscita: controlla Internet e i log"), 500
+        marker = Path(runtime.config["paths"]["data_dir"]).resolve() / ".setup-complete"
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("ok\n", encoding="utf-8")
+        return jsonify(complete=True)
 
     @app.put("/api/child")
     def put_child():

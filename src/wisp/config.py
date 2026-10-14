@@ -55,6 +55,14 @@ def validate_config(config: dict[str, Any]) -> dict[str, Any]:
     rag = config.get("rag", {})
     if int(rag.get("top_k", 10)) < 1 or int(rag.get("lexical_k", 10)) < 1:
         raise ConfigError("RAG candidate counts must be positive")
+
+    button = config.get("button", {})
+    if button.get("line") is not None and int(button["line"]) < 0:
+        raise ConfigError("button.line must be a non-negative GPIO offset")
+    if button.get("edge", "falling") not in {"falling", "rising"}:
+        raise ConfigError("button.edge must be falling or rising")
+    if not 0 <= int(button.get("debounce_ms", 80)) <= 5_000:
+        raise ConfigError("button.debounce_ms must be between 0 and 5000")
     return config
 
 

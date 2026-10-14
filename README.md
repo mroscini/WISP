@@ -89,13 +89,13 @@ Su Windows, attiva l’ambiente con `.venv\Scripts\Activate.ps1`. Apri poi `http
 
 Il pannello parte anche quando i modelli non sono presenti; indicizzazione e chat richiedono i percorsi ONNX/GGUF configurati. Il QR usa `server.public_url`: sul dispositivo di riferimento punta a `http://192.168.0.250:8787`.
 
-Per installare anche Piper:
+Per installare in una volta sola audio, Piper, GPIO e server di produzione puoi usare il pulsante **Installa componenti** mostrato al primo avvio, oppure:
 
 ```bash
-python -m pip install -e ".[audio]"
+python -m pip install -e ".[audio,hardware,production]"
 ```
 
-Dal pannello **Voci** puoi quindi installare Paola o Riccardo. Il collegamento a ElevenLabs apre un servizio cloud esterno: i cloni non sono esportabili come modelli Piper e, per usarli direttamente in WISP, servirebbe una futura integrazione con la loro API.
+Dal pannello **Voci** puoi installare Paola o Riccardo. Puoi anche inserire una API key ElevenLabs: WISP la verifica sul server, salva soltanto il segreto locale e mostra le voci del tuo account. Se assegni una voce ElevenLabs a un amico, la risposta viene sintetizzata tramite l’API; Piper continua invece a funzionare offline.
 
 ## Avvio su RK3566
 
@@ -124,6 +124,21 @@ WISP_CONFIG=/mnt/emmc/wisp/data/config.json /mnt/emmc/wisp/.venv/bin/wisp serve
 
 Installa WISP e il suo ambiente virtuale sulla eMMC, non sulla piccola partizione di sistema osservata durante la ricognizione. Per il servizio web installa anche l’extra di produzione con `python -m pip install -e ".[production]"`. I file in `deploy/` sono esempi: configurare il mount, copiarli in systemd e abilitarli è un’operazione amministrativa intenzionalmente non automatizzata.
 
+### Pulsante fisico
+
+Il servizio `wisp button-service` attende un fronte GPIO. A ogni pressione ricarica la configurazione corrente ed esegue un ciclo completo: ALSA registra, Vosk trascrive, Qwen/RAG risponde e la voce selezionata viene riprodotta con Piper o ElevenLabs. Imposta prima l’offset reale del pin:
+
+```json
+"button": {
+  "chip": "/dev/gpiochip0",
+  "line": 5,
+  "edge": "falling",
+  "debounce_ms": 80
+}
+```
+
+Il valore `5` è soltanto un esempio: l’offset corretto dipende dal cablaggio e dalla scheda. `deploy/wisp-button.service` contiene l’unità systemd di riferimento. L’utente `wisp` deve avere accesso al GPIO scelto e al gruppo audio.
+
 ## Personaggi e proprietà intellettuale
 
 La configurazione di esempio usa il nome **Spider-Man**, come profilo testuale creato dall’utente. La repository non contiene immagini, storie, loghi, audio, modelli vocali o checkpoint ufficiali o derivati. Spider-Man è un marchio/personaggio dei rispettivi titolari; WISP non è affiliato a Marvel o Disney.
@@ -147,12 +162,15 @@ I test coprono configurazione, persistenza, protezione dai path traversal, uploa
 ```text
 src/wisp/
 ├── audio.py            # adattatori STT/TTS
+├── button.py           # ascolto del pulsante GPIO fisico
 ├── config.py           # configurazione validata e atomica
 ├── conversation.py     # orchestrazione indipendente dal web
 ├── diagnostics.py      # metriche reali del dispositivo
+├── elevenlabs.py       # client TTS ElevenLabs
 ├── llm.py              # client streaming per llama.cpp
 ├── rag/                # embedding, indice, retrieval e reranking
 ├── storage.py          # documenti e upload
+├── secrets.py          # segreti locali non esposti dal pannello
 ├── voices.py           # catalogo e installazione voci Piper
 └── web/                # API e pannello responsive
 ```
@@ -160,7 +178,8 @@ src/wisp/
 ## Limiti noti
 
 - La pipeline live è implementata, ma non verificata sul prototipo perché non viene rilevato un ingresso audio.
-- Le voci ElevenLabs restano nel relativo account e richiederebbero Internet, API key e crediti; non sono scaricabili dentro Piper.
+- Le voci ElevenLabs restano nel relativo account e richiedono Internet, API key e crediti; non sono scaricabili dentro Piper.
+- Il servizio del pulsante è pronto, ma il GPIO e il microfono reali non sono ancora stati identificati e verificati sul prototipo.
 - Nessuna autenticazione del pannello.
 - L’indicizzazione è sincrona e può occupare la richiesta HTTP per alcuni secondi.
 - Il benchmark esistente misura il retrieval del dataset privato originale e non accompagna la repository.

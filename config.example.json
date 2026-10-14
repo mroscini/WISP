@@ -52,6 +52,12 @@
     "vosk_model": "/mnt/emmc/vosk-model-small-it-0.22",
     "tts_executable": "piper",
     "tts_arguments": ["--model", "/path/to/authorized-voice.onnx", "--output_file", "{output}"]
+  },
+  "button": {
+    "chip": "/dev/gpiochip0",
+    "line": null,
+    "edge": "falling",
+    "debounce_ms": 80
   }
 }
 

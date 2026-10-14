@@ -1,0 +1,23 @@
+[Unit]
+Description=WISP physical conversation button
+After=network-online.target llama-server.service
+Wants=network-online.target
+RequiresMountsFor=/mnt/emmc
+
+[Service]
+Type=simple
+User=wisp
+Group=wisp
+SupplementaryGroups=audio
+WorkingDirectory=/mnt/emmc/wisp
+EnvironmentFile=-/etc/wisp/wisp.env
+ExecStart=/mnt/emmc/wisp/.venv/bin/wisp button-service
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/mnt/emmc/wisp/data
+
+[Install]
+WantedBy=multi-user.target

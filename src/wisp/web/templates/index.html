@@ -35,6 +35,10 @@
           </div>
           <div class="orb" aria-hidden="true"><span></span></div>
         </div>
+        <article class="panel first-run" id="first-run" hidden>
+          <div><p class="eyebrow">PRIMA CONFIGURAZIONE</p><h2>Prepariamo WISP</h2><p class="muted">Installa audio, Piper, GPIO e il server necessario al dispositivo.</p></div>
+          <button class="primary" id="install-requirements">Installa componenti</button>
+        </article>
         <div class="grid-two">
           <article class="panel">
             <div class="panel-heading"><div><p class="eyebrow">OGGI PARLI CON</p><h2 id="active-name">—</h2></div><span class="badge">Pronto!</span></div>
@@ -62,6 +66,11 @@
       <section class="view" id="view-voices">
         <div class="section-title"><div><p class="eyebrow">SCEGLI E ASCOLTA</p><h1>Le voci</h1><p>Due voci italiane funzionano direttamente su WISP. Puoi provarle e assegnarle quando crei un amico.</p></div></div>
         <div class="voice-grid" id="voice-list"></div>
+        <form class="panel elevenlabs-panel" id="elevenlabs-form">
+          <div><p class="eyebrow">VOCE ONLINE · OPZIONALE</p><h2>Collega ElevenLabs</h2><p class="muted">La chiave resta salvata sul dispositivo e non viene mostrata di nuovo. Servono Internet e crediti ElevenLabs. Inseriscila solo dalla tua rete privata.</p></div>
+          <label>API key<input type="password" name="api_key" minlength="20" maxlength="256" autocomplete="new-password" placeholder="Incolla qui una chiave ElevenLabs"></label>
+          <div class="integration-row"><span id="elevenlabs-status">Non collegato</span><div><button class="secondary" type="button" id="disconnect-elevenlabs" hidden>Scollega</button><button class="primary" type="submit">Salva e verifica</button></div></div>
+        </form>
         <article class="panel external-voice">
           <div><p class="eyebrow">VUOI UNA VOCE PERSONALIZZATA?</p><h2>Crea una voce con ElevenLabs</h2><p class="muted">Puoi registrare o caricare l’audio sul loro servizio. È esterno, richiede Internet e il cloning è disponibile sui piani a pagamento. Usa soltanto la tua voce o una voce per cui hai il consenso.</p></div>
           <a class="primary link-button" href="https://elevenlabs.io/voice-cloning" target="_blank" rel="noreferrer">Apri ElevenLabs ↗</a>
