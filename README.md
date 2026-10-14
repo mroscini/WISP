@@ -71,7 +71,7 @@ La base tecnica recuperata dal dispositivo comprendeva:
 - indice da 181 frammenti e 384 dimensioni;
 - benchmark del retrieval: 61/69 casi noti corretti, pari all’88,4%, tempo medio 1,047 s.
 
-I dettagli completi e le differenze sono in [Dal prototipo originale a WISP](docs/ORIGINAL_VS_WISP.md).
+I dettagli sono in [Ricognizione del dispositivo](docs/DEVICE_AUDIT.md); le differenze sono riepilogate in [Dal prototipo originale a WISP](docs/ORIGINAL_VS_WISP.md).
 
 ## Avvio rapido per sviluppo
 
