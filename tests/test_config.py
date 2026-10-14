@@ -37,3 +37,11 @@ def test_invalid_button_gpio_is_rejected(tmp_path):
     with pytest.raises(ConfigError, match="GPIO"):
         store.save(config)
 
+
+def test_reference_hardware_is_ready_for_button_service(tmp_path):
+    config = ConfigStore(tmp_path / "config.json").defaults()
+    assert config["audio"]["input_device"] == "default"
+    assert config["audio"]["stt_provider"] == "vosk-file"
+    assert config["button"]["chip"] == "/dev/gpiochip0"
+    assert config["button"]["line"] == 5
+

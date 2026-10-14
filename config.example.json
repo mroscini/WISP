@@ -45,7 +45,7 @@
   "audio": {
     "stt_provider": "vosk-file",
     "tts_provider": "character-voice",
-    "input_device": "",
+    "input_device": "default",
     "output_device": "",
     "record_seconds": 6,
     "sample_rate": 16000,
@@ -55,7 +55,7 @@
   },
   "button": {
     "chip": "/dev/gpiochip0",
-    "line": null,
+    "line": 5,
     "edge": "falling",
     "debounce_ms": 80
   }

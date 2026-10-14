@@ -137,7 +137,7 @@ Il servizio `wisp button-service` attende un fronte GPIO. A ogni pressione ricar
 }
 ```
 
-Il valore `5` è soltanto un esempio: l’offset corretto dipende dal cablaggio e dalla scheda. `deploy/wisp-button.service` contiene l’unità systemd di riferimento. L’utente `wisp` deve avere accesso al GPIO scelto e al gruppo audio.
+La configurazione hardware di riferimento assume un pulsante su `/dev/gpiochip0`, linea `5`, e un microfono ALSA chiamato `default`. Entrambi i valori restano modificabili per adattarsi al cablaggio definitivo. `deploy/wisp-button.service` contiene l’unità systemd di riferimento. L’utente `wisp` deve avere accesso al GPIO scelto e al gruppo audio.
 
 ## Personaggi e proprietà intellettuale
 
@@ -179,7 +179,7 @@ src/wisp/
 
 - La pipeline live è implementata, ma non verificata sul prototipo perché non viene rilevato un ingresso audio.
 - Le voci ElevenLabs restano nel relativo account e richiedono Internet, API key e crediti; non sono scaricabili dentro Piper.
-- Il servizio del pulsante è pronto, ma il GPIO e il microfono reali non sono ancora stati identificati e verificati sul prototipo.
+- Il servizio del pulsante usa la configurazione hardware di riferimento; il collaudo elettrico finale resta necessario sul dispositivo assemblato.
 - Nessuna autenticazione del pannello.
 - L’indicizzazione è sincrona e può occupare la richiesta HTTP per alcuni secondi.
 - Il benchmark esistente misura il retrieval del dataset privato originale e non accompagna la repository.
