@@ -132,15 +132,6 @@ Nel pannello **Voci** puoi installare Paola o Riccardo per la sintesi offline co
 
 La chiave viene verificata dal server, conservata nel file locale `data/.secrets.json` e mai restituita integralmente al browser. Le voci ElevenLabs rimangono nel relativo account: non vengono convertite o scaricate come modelli Piper.
 
-## Dal prototipo reale
-
-WISP deriva da una ricognizione su un dispositivo RK3566 reale. Il prototipo conteneva `llama.cpp`, Qwen 2.5 1.5B, embedding MiniLM e un reranker multilingue. Il retrieval originale raggiungeva 61 risposte corrette su 69 casi noti (88,4%).
-
-- [Ricognizione tecnica del dispositivo](docs/DEVICE_AUDIT.md)
-- [Dal prototipo originale a WISP](docs/ORIGINAL_VS_WISP.md)
-- [Sicurezza e privacy](docs/SECURITY.md)
-- [Come contribuire](CONTRIBUTING.md)
-
 ## Struttura
 
 ```text
