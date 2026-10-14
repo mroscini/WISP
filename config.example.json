@@ -43,8 +43,8 @@
   ],
   "active_character_id": "spider-man",
   "audio": {
-    "stt_provider": "disabled",
-    "tts_provider": "disabled",
+    "stt_provider": "vosk-file",
+    "tts_provider": "character-voice",
     "input_device": "",
     "output_device": "",
     "record_seconds": 6,

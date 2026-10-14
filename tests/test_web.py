@@ -97,7 +97,7 @@ def test_elevenlabs_key_is_verified_but_never_returned(tmp_path, monkeypatch):
         ],
     )
     client = make_client(tmp_path)
-    fake_key = "sk_example_only_not_a_real_key_1234"
+    fake_key = "example-only-not-a-real-key-1234"
     response = client.post("/api/elevenlabs", json={"api_key": fake_key})
     assert response.status_code == 200
     assert response.get_json()["key_hint"] == "••••1234"
