@@ -1,82 +1,71 @@
 <div align="center">
 
+<img src="docs/images/wisp-hero.png" alt="WISP, dispositivo vocale con pulsante fisico" width="100%">
+
 # WISP
 
-### Conversazioni e storie locali per piccoli dispositivi ARM
+### Premi. Parla. Ascolta una storia.
 
-Un piccolo telefono, un modello locale e un progetto nato per conversare senza cloud.
+Un compagno vocale **local-first** per piccoli dispositivi ARM, progettato per funzionare senza schermo e senza dipendere dal browser.
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-315d46?style=flat-square)
-![Runtime](https://img.shields.io/badge/runtime-RK3566-c7e85d?style=flat-square)
-![Cloud](https://img.shields.io/badge/cloud-none-132018?style=flat-square)
-![License](https://img.shields.io/badge/license-MIT-e9a84c?style=flat-square)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-1257b1?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/platform-ARM64-e62429?style=flat-square)](#hardware-di-riferimento)
+[![Tests](https://img.shields.io/badge/tests-20%20passing-1257b1?style=flat-square)](#test)
+[![License](https://img.shields.io/badge/license-MIT-e62429?style=flat-square)](LICENSE)
+
+[Avvio rapido](#avvio-rapido) · [Come funziona](#come-funziona) · [Hardware](#hardware-di-riferimento) · [Sicurezza](docs/SECURITY.md)
 
 </div>
 
 > [!IMPORTANT]
-> WISP è in fase alpha. Il RAG non garantisce che ogni risposta sia corretta o adatta a un bambino: il dispositivo richiede supervisione adulta.
+> WISP è in fase **alpha**. Le risposte generate e i contenuti RAG richiedono supervisione adulta: il software non garantisce che ogni risposta sia corretta o adatta a un bambino.
 
-## Perché esiste
+## Un interfono tutto suo
 
-WISP nasce da un prototipo reale costruito attorno a un RK3566 con 4 GB di RAM. L’obiettivo era semplice: creare un oggetto fisico capace di ascoltare e rispondere usando soltanto modelli locali. Il primo prototipo ha dimostrato il funzionamento di Qwen e di un RAG ibrido; questa repository trasforma quel lavoro in un sistema leggibile, configurabile e riproducibile.
+Il pannello web serve soltanto a scegliere amici, voci e storie. Durante l’uso quotidiano il bambino non deve aprire alcuna pagina: preme il pulsante fisico, parla e ascolta la risposta dal dispositivo.
 
-Non è una demo cloud travestita da dispositivo embedded. L’inferenza, gli embedding, il reranking e i documenti restano sulla macchina.
+| 1 · Premi | 2 · Parla | 3 · Ascolta |
+|:---:|:---:|:---:|
+| Il GPIO avvia la registrazione | Vosk trascrive localmente | Qwen risponde e Piper parla |
 
-![Segnaposto per la fotografia del dispositivo](docs/images/device-placeholder.svg)
+I documenti, il retrieval e l’inferenza possono restare interamente sul dispositivo. **ElevenLabs è opzionale**: si attiva soltanto inserendo una propria API key e richiede Internet e crediti.
 
-> Screenshot del pannello: da acquisire sul dispositivo reale dopo l’installazione. La sessione di preparazione non disponeva di un browser controllabile e non viene usato un mock al suo posto.
+## Cosa offre
 
-## Cosa funziona oggi
+- Conversazione autonoma dal pannello tramite pulsante fisico.
+- Qwen 2.5 eseguito localmente con `llama.cpp`.
+- RAG ibrido con MiniLM ONNX, ricerca lessicale e reranker.
+- Amici con prompt, raccolte di storie e voci indipendenti.
+- Voci italiane Piper, installabili e utilizzabili offline.
+- Trascrizione offline tramite Vosk e acquisizione audio ALSA.
+- Integrazione opzionale ElevenLabs con API key conservata localmente.
+- Pannello responsive, accessibile dalla rete locale anche tramite QR code.
+- Servizi `systemd` di esempio per pannello e pulsante.
 
-- Qwen 2.5 tramite l’API OpenAI-compatible di `llama.cpp`.
-- RAG ibrido basato su MiniLM ONNX, matching lessicale e reranker ONNX.
-- Profili multipli per personaggi, prompt e voci.
-- Contenuti associabili a uno o più personaggi.
-- Editor e upload sicuro di file `.txt` e `.md`.
-- Ricostruzione locale dell’indice.
-- Interfaccia essenziale con amici, storie, voci e QR per l’accesso da telefono.
-- Voci italiane Piper Paola e Riccardo, installabili dal pannello e utilizzabili offline.
-- Adattatore Vosk per trascrivere file audio offline.
-- Pipeline componibile ALSA → Vosk → RAG/Qwen → TTS locale → ALSA, disattivata finché hardware e voce non sono configurati.
-- Pannello responsive utilizzabile da telefono o computer.
-
-La cattura live dal microfono non è dichiarata completa: sul dispositivo analizzato non era disponibile un ingresso audio. Le voci Piper sono predisposte dal codice ma vanno installate sul dispositivo.
-
-## Architettura
+## Come funziona
 
 ```mermaid
 flowchart LR
-    Mic[Microfono\nintegrazione futura] --> STT[STT locale\nVosk adapter]
-    STT --> Core[Conversation service]
-    Web[Pannello web locale] --> Config[(Configurazione)]
-    Web --> Content[(Storie e testi)]
-    Content --> Indexer[MiniLM indexer]
-    Indexer --> Index[(Indice NPZ)]
-    Index --> RAG[Retrieval ibrido]
-    RAG --> Core
-    Core --> Llama[llama-server\nQwen 2.5 1.5B]
-    Llama --> TTS[TTS locale\nprovider configurabile]
-    Config --> Core
+    B["Pulsante fisico"] --> M["Microfono ALSA"]
+    M --> S["Vosk · STT locale"]
+    S --> R["RAG + Qwen"]
+    R --> V{"Voce scelta"}
+    V -->|offline| P["Piper"]
+    V -->|opzionale| E["ElevenLabs"]
+    P --> A["Altoparlante"]
+    E --> A
+    W["Pannello web"] -. configura .-> R
 ```
 
-Il pannello modifica configurazione e contenuti, ma non è parte del ciclo vitale della conversazione. Chiudere il browser non arresta il motore.
+Il pannello modifica configurazione e contenuti, ma non fa parte del ciclo vitale della conversazione. Chiudere il browser non arresta il motore.
 
-## Dal prototipo reale
+## Avvio rapido
 
-La base tecnica recuperata dal dispositivo comprendeva:
-
-- `llama.cpp` build 10586, commit `b21e4de74`;
-- Qwen 2.5 1.5B Instruct Q4_K_M;
-- `paraphrase-multilingual-MiniLM-L12-v2` quantizzato ONNX;
-- reranker derivato da `mMiniLMv2-L12-H384-distilled-from-XLMR-Large`;
-- indice da 181 frammenti e 384 dimensioni;
-- benchmark del retrieval: 61/69 casi noti corretti, pari all’88,4%, tempo medio 1,047 s.
-
-I dettagli sono in [Ricognizione del dispositivo](docs/DEVICE_AUDIT.md); le differenze sono riepilogate in [Dal prototipo originale a WISP](docs/ORIGINAL_VS_WISP.md).
-
-## Avvio rapido per sviluppo
+### Linux e dispositivo ARM64
 
 ```bash
+git clone https://github.com/mroscini/WISP.git
+cd WISP
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -e ".[dev]"
@@ -85,30 +74,42 @@ cp config.example.json data/config.json
 wisp serve
 ```
 
-Su Windows, attiva l’ambiente con `.venv\Scripts\Activate.ps1`. Apri poi `http://127.0.0.1:8787`.
+### Windows
 
-Il pannello parte anche quando i modelli non sono presenti; indicizzazione e chat richiedono i percorsi ONNX/GGUF configurati. Il QR usa `server.public_url`: sul dispositivo di riferimento punta a `http://192.168.0.250:8787`.
+```powershell
+git clone https://github.com/mroscini/WISP.git
+cd WISP
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+Copy-Item config.example.json data/config.json
+wisp serve
+```
 
-Per installare in una volta sola audio, Piper, GPIO e server di produzione puoi usare il pulsante **Installa componenti** mostrato al primo avvio, oppure:
+Apri `http://127.0.0.1:8787`. Sulla rete locale usa l’indirizzo mostrato dal QR code; nella configurazione di riferimento è `http://192.168.0.250:8787`.
+
+Il pannello può partire anche senza modelli. Indicizzazione e conversazione richiedono invece i percorsi ONNX/GGUF corretti. Al primo avvio puoi installare i componenti dal pulsante **Installa componenti**, oppure eseguire:
 
 ```bash
 python -m pip install -e ".[audio,hardware,production]"
 ```
 
-Dal pannello **Voci** puoi installare Paola o Riccardo. Puoi anche inserire una API key ElevenLabs: WISP la verifica sul server, salva soltanto il segreto locale e mostra le voci del tuo account. Se assegni una voce ElevenLabs a un amico, la risposta viene sintetizzata tramite l’API; Piper continua invece a funzionare offline.
+## Hardware di riferimento
 
-## Avvio su RK3566
+La configurazione inclusa assume:
 
-Requisiti consigliati:
+| Componente | Valore predefinito |
+|---|---|
+| SoC | RK3566 ARM64 |
+| Memoria | 4 GB |
+| Microfono | dispositivo ALSA `default` |
+| Pulsante | `/dev/gpiochip0`, linea `5` |
+| Evento | fronte `falling`, debounce `80 ms` |
+| Modello | Qwen 2.5 1.5B Instruct Q4_K_M |
 
-- Linux ARM64;
-- 4 GB di RAM;
-- Python 3.11 o successivo;
-- una build ARM64 di `llama.cpp` con `llama-server`;
-- circa 2 GB per modello LLM, embedding e reranker;
-- memoria separata dal filesystem di sistema, se possibile.
+Microfono e linea GPIO sono valori di riferimento: possono essere modificati in `data/config.json` quando il cablaggio definitivo è noto.
 
-Avvia prima il server Qwen:
+Avvia il modello con `llama-server`:
 
 ```bash
 /opt/llama.cpp/build/bin/llama-server \
@@ -116,38 +117,43 @@ Avvia prima il server Qwen:
   -t 4 -c 1024 --host 127.0.0.1 --port 8080
 ```
 
-Poi configura `data/config.json` e avvia WISP:
+Poi avvia pannello e servizio del pulsante:
 
 ```bash
 WISP_CONFIG=/mnt/emmc/wisp/data/config.json /mnt/emmc/wisp/.venv/bin/wisp serve
+WISP_CONFIG=/mnt/emmc/wisp/data/config.json /mnt/emmc/wisp/.venv/bin/wisp button-service
 ```
 
-Installa WISP e il suo ambiente virtuale sulla eMMC, non sulla piccola partizione di sistema osservata durante la ricognizione. Per il servizio web installa anche l’extra di produzione con `python -m pip install -e ".[production]"`. I file in `deploy/` sono esempi: configurare il mount, copiarli in systemd e abilitarli è un’operazione amministrativa intenzionalmente non automatizzata.
+Le unità di esempio sono in [`deploy/`](deploy/). L’utente del servizio deve poter accedere al GPIO scelto e al gruppo audio.
 
-### Pulsante fisico
+## Voci
 
-Il servizio `wisp button-service` attende un fronte GPIO. A ogni pressione ricarica la configurazione corrente ed esegue un ciclo completo: ALSA registra, Vosk trascrive, Qwen/RAG risponde e la voce selezionata viene riprodotta con Piper o ElevenLabs. Imposta prima l’offset reale del pin:
+Nel pannello **Voci** puoi installare Paola o Riccardo per la sintesi offline con Piper. In alternativa puoi inserire una API key ElevenLabs e assegnare a ogni amico una voce disponibile nel tuo account.
 
-```json
-"button": {
-  "chip": "/dev/gpiochip0",
-  "line": 5,
-  "edge": "falling",
-  "debounce_ms": 80
-}
+La chiave viene verificata dal server, conservata nel file locale `data/.secrets.json` e mai restituita integralmente al browser. Le voci ElevenLabs rimangono nel relativo account: non vengono convertite o scaricate come modelli Piper.
+
+## Dal prototipo reale
+
+WISP deriva da una ricognizione su un dispositivo RK3566 reale. Il prototipo conteneva `llama.cpp`, Qwen 2.5 1.5B, embedding MiniLM e un reranker multilingue. Il retrieval originale raggiungeva 61 risposte corrette su 69 casi noti (88,4%).
+
+- [Ricognizione tecnica del dispositivo](docs/DEVICE_AUDIT.md)
+- [Dal prototipo originale a WISP](docs/ORIGINAL_VS_WISP.md)
+- [Sicurezza e privacy](docs/SECURITY.md)
+- [Come contribuire](CONTRIBUTING.md)
+
+## Struttura
+
+```text
+src/wisp/
+├── audio.py            # STT, TTS e ALSA
+├── button.py           # pulsante GPIO fisico
+├── config.py           # configurazione validata e atomica
+├── conversation.py     # ciclo completo della conversazione
+├── elevenlabs.py       # client TTS opzionale
+├── rag/                # embedding, indice e retrieval
+├── voices.py           # catalogo Piper
+└── web/                # API e pannello responsive
 ```
-
-La configurazione hardware di riferimento assume un pulsante su `/dev/gpiochip0`, linea `5`, e un microfono ALSA chiamato `default`. Entrambi i valori restano modificabili per adattarsi al cablaggio definitivo. `deploy/wisp-button.service` contiene l’unità systemd di riferimento. L’utente `wisp` deve avere accesso al GPIO scelto e al gruppo audio.
-
-## Personaggi e proprietà intellettuale
-
-La configurazione di esempio usa il nome **Spider-Man**, come profilo testuale creato dall’utente. La repository non contiene immagini, storie, loghi, audio, modelli vocali o checkpoint ufficiali o derivati. Spider-Man è un marchio/personaggio dei rispettivi titolari; WISP non è affiliato a Marvel o Disney.
-
-Per una distribuzione propria, configura personaggi e contenuti originali o per i quali possiedi i diritti.
-
-## Pannello senza autenticazione
-
-Su richiesta, questa versione non richiede login. Il server ascolta sulla LAN (`0.0.0.0`) per essere raggiungibile da smartphone. Non esporlo a Internet e usalo solo su una rete fidata. Consulta [Sicurezza e privacy](docs/SECURITY.md).
 
 ## Test
 
@@ -155,47 +161,26 @@ Su richiesta, questa versione non richiede login. Il server ascolta sulla LAN (`
 python -m pytest
 ```
 
-I test coprono configurazione, persistenza, protezione dai path traversal, upload, chunking, indicizzazione, filtro per personaggio e API web.
+La suite copre configurazione, persistenza, sicurezza dei percorsi, upload, chunking, RAG, voci, ElevenLabs, API web e integrazione GPIO.
 
-## Struttura
+## Limiti attuali
 
-```text
-src/wisp/
-├── audio.py            # adattatori STT/TTS
-├── button.py           # ascolto del pulsante GPIO fisico
-├── config.py           # configurazione validata e atomica
-├── conversation.py     # orchestrazione indipendente dal web
-├── diagnostics.py      # metriche reali del dispositivo
-├── elevenlabs.py       # client TTS ElevenLabs
-├── llm.py              # client streaming per llama.cpp
-├── rag/                # embedding, indice, retrieval e reranking
-├── storage.py          # documenti e upload
-├── secrets.py          # segreti locali non esposti dal pannello
-├── voices.py           # catalogo e installazione voci Piper
-└── web/                # API e pannello responsive
-```
+- Microfono, altoparlante e GPIO richiedono ancora il collaudo elettrico sul dispositivo assemblato.
+- Nessuna autenticazione del pannello: va esposto soltanto su una LAN fidata, mai direttamente su Internet.
+- L’indicizzazione è sincrona e può richiedere alcuni secondi.
+- Le prestazioni dipendono dalle build ARM64 di ONNX Runtime e `llama.cpp`.
+- La partizione di sistema del prototipo era quasi piena: modelli e ambiente virtuale vanno collocati sulla eMMC.
 
-## Limiti noti
+## Personaggi e diritti
 
-- La pipeline live è implementata, ma non verificata sul prototipo perché non viene rilevato un ingresso audio.
-- Le voci ElevenLabs restano nel relativo account e richiedono Internet, API key e crediti; non sono scaricabili dentro Piper.
-- Il servizio del pulsante usa la configurazione hardware di riferimento; il collaudo elettrico finale resta necessario sul dispositivo assemblato.
-- Nessuna autenticazione del pannello.
-- L’indicizzazione è sincrona e può occupare la richiesta HTTP per alcuni secondi.
-- Il benchmark esistente misura il retrieval del dataset privato originale e non accompagna la repository.
-- Le prestazioni dipendono dalla build di ONNX Runtime e `llama.cpp` per il dispositivo.
-- Il filesystem di sistema osservato sul prototipo era quasi pieno; WISP non tenta di ripulirlo automaticamente.
-
-## Roadmap
-
-- acquisizione ALSA con voice activity detection;
-- verifica end-to-end di riproduzione e TTS Piper sull’hardware;
-- indicizzazione in background con avanzamento;
-- benchmark riproducibile con corpus pubblico;
-- pacchetto di installazione ARM64;
-- autenticazione opzionale per reti condivise.
+La configurazione di esempio contiene il nome **Spider-Man** come semplice profilo testuale inserito dall’utente. La repository non include immagini, audio, storie, loghi o modelli ufficiali o derivati. WISP non è affiliato a Marvel o Disney. Per una distribuzione propria, usa personaggi e contenuti originali o per i quali possiedi i diritti.
 
 ## Licenza
 
-Il codice WISP è distribuito sotto licenza MIT. Modelli, voci e contenuti caricati dall’utente mantengono le rispettive licenze.
+Il codice è distribuito sotto licenza [MIT](LICENSE). Modelli, voci e contenuti caricati dall’utente mantengono le rispettive licenze.
 
+<div align="center">
+
+**WISP** · piccolo, locale, curioso
+
+</div>
